@@ -1,0 +1,52 @@
+{
+    "success": true,
+    "request": {
+        "kdNr": "40831"
+    },
+    "customer": {
+        "kdNr": "40831",
+        "displayName": "Herr Jens Götting",
+        "company": "1A Autoservice Götting"
+    },
+    "summary": {
+        "orderCount": 2,
+        "positionCount": 3
+    },
+    "orders": [
+        {
+            "orderId": 1,
+            "invoiceNumber": "2500566-R",
+            "comment": "Test aus n8n 2026-03-06 13:19",
+            "positions": [
+                {
+                    "position": 1,
+                    "model": "Brother MFC-1810",
+                    "cartridge": "FSTN1050HC",
+                    "quantity": 1
+                }
+            ]
+        },
+        {
+            "orderId": 2,
+            "invoiceNumber": "2501894-R",
+            "comment": "n8n simulated request 2",
+            "positions": [
+                {
+                    "position": 1,
+                    "model": "Brother MFC-1810",
+                    "cartridge": "FSTN1050HC",
+                    "quantity": 3
+                },
+                {
+                    "position": 2,
+                    "model": "OPC Drum",
+                    "cartridge": "FSDR1050",
+                    "quantity": 2
+                }
+            ]
+        }
+    ],
+    "speech": {
+        "summaryText": "Ich habe 2 Aufträge mit insgesamt 3 Positionen für 1A Autoservice Götting gefunden."
+    }
+}

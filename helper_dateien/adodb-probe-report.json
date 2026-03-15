@@ -1,0 +1,72 @@
+﻿{
+    "Timestamp":  "2026-02-27T11:14:04.7960650+01:00",
+    "ComputerName":  "DELL-LAPTOP",
+    "UserName":  "janpa",
+    "OS":  "Microsoft Windows 11 Pro",
+    "OSBuild":  "26200",
+    "NodeHint":  "node-adodb chooses cscript host; x64=System32, x86=SysWOW64 (in many setups).",
+    "OfficeBitnessGuess":  "Office Click-to-Run Platform: x86",
+    "DbPath":  "",
+    "AceRegistry":  [
+                        {
+                            "Provider":  "Microsoft.ACE.OLEDB.12.0",
+                            "Registered_x64":  true,
+                            "Registered_x86":  true
+                        },
+                        {
+                            "Provider":  "Microsoft.ACE.OLEDB.16.0",
+                            "Registered_x64":  true,
+                            "Registered_x86":  true
+                        }
+                    ],
+    "CscriptPaths":  {
+                         "System32":  "C:\\WINDOWS\\System32\\cscript.exe",
+                         "SysWOW64":  "C:\\WINDOWS\\SysWOW64\\cscript.exe",
+                         "System32_exists":  true,
+                         "SysWOW64_exists":  true
+                     },
+    "CscriptProbe":  [
+                         {
+                             "Cscript":  "C:\\WINDOWS\\System32\\cscript.exe",
+                             "ExitCode":  0,
+                             "Stdout":  "VBSPROBE:START\r\nHostName=C:\\WINDOWS\\System32\\cscript.exe\r\nEnv.PROCESSOR_ARCHITECTURE=AMD64\r\nEnv.PROCESSOR_ARCHITEW6432=%PROCESSOR_ARCHITEW6432%\r\nDbPath=\r\nCreateObject ADODB.Connection OK\r\nSKIP OPEN (no DbPath) Provider=Microsoft.ACE.OLEDB.16.0\r\nCreateObject ADODB.Connection OK\r\nSKIP OPEN (no DbPath) Provider=Microsoft.ACE.OLEDB.12.0\r\nVBSPROBE:END\r\n",
+                             "Stderr":  ""
+                         },
+                         {
+                             "Cscript":  "C:\\WINDOWS\\SysWOW64\\cscript.exe",
+                             "ExitCode":  0,
+                             "Stdout":  "VBSPROBE:START\r\nHostName=C:\\WINDOWS\\SysWOW64\\cscript.exe\r\nEnv.PROCESSOR_ARCHITECTURE=x86\r\nEnv.PROCESSOR_ARCHITEW6432=AMD64\r\nDbPath=\r\nCreateObject ADODB.Connection OK\r\nSKIP OPEN (no DbPath) Provider=Microsoft.ACE.OLEDB.16.0\r\nCreateObject ADODB.Connection OK\r\nSKIP OPEN (no DbPath) Provider=Microsoft.ACE.OLEDB.12.0\r\nVBSPROBE:END\r\n",
+                             "Stderr":  ""
+                         }
+                     ],
+    "Summary":  [
+                    {
+                        "Cscript":  "C:\\WINDOWS\\System32\\cscript.exe",
+                        "ExitCode":  0,
+                        "OpenOkLines":  {
+
+                                        },
+                        "OpenFailLines":  {
+
+                                          },
+                        "CreateFailLines":  {
+
+                                            },
+                        "Stderr":  ""
+                    },
+                    {
+                        "Cscript":  "C:\\WINDOWS\\SysWOW64\\cscript.exe",
+                        "ExitCode":  0,
+                        "OpenOkLines":  {
+
+                                        },
+                        "OpenFailLines":  {
+
+                                          },
+                        "CreateFailLines":  {
+
+                                            },
+                        "Stderr":  ""
+                    }
+                ]
+}

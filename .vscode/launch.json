@@ -1,0 +1,34 @@
+//Version: 2026-02-26 23:14
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Access-API (server.js)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}\\src\\server.js",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"],
+            "env": {
+                "LINA_API_KEY": "lina-test-key-2026",
+                "LINA_HMAC_SECRET": "N8N_LINA_HMAC_SECRET",
+                "SIGNATURE_MAX_SKEW_SEC": "300",
+                "ACCESS_DB_PATH": "D:\\Farbspektrum\\n8n\\api\\access\\backend_db\\backend.accdb"
+            }
+        },
+        {
+            "name": "Access-API (server.cleand.js)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}\\src\\server.cleaned.js",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"],
+            "env": {
+                "LINA_API_KEY": "lina-test-key-2026",
+                "LINA_HMAC_SECRET": "N8N_LINA_HMAC_SECRET",
+                "SIGNATURE_MAX_SKEW_SEC": "300",
+                "ACCESS_DB_PATH": "D:\\Farbspektrum\\n8n\\api\\access\\backend_db\\backend.accdb"
+            }  
+        }
+    ]
+}

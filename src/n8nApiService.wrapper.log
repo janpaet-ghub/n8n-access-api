@@ -1,0 +1,22 @@
+2026-02-28T18:54:46.242 DEBUG console - Starting WinSW in service mode.
+2026-02-28T18:54:46.284 FATAL console - Unhandled exception
+System.IO.DirectoryNotFoundException: Could not find a part of the path 'C:\DATEN\Wichtige Daten\n8n\api\access\src'.
+   at System.Environment.set_CurrentDirectoryCore(String)
+   at System.Environment.set_CurrentDirectory(String)
+   at WinSW.WrapperService..ctor(XmlServiceConfig)
+   at WinSW.Program.<Main>g__Run|7_1(String)
+   at System.CommandLine.Handler.<>c__DisplayClass2_0`1.<SetHandler>b__0(InvocationContext)
+   at System.CommandLine.Invocation.AnonymousCommandHandler.Invoke(InvocationContext)
+   at System.CommandLine.Invocation.InvocationPipeline.<>c__DisplayClass4_0.<<BuildInvocationChain>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at System.CommandLine.Builder.CommandLineBuilderExtensions.<>c__DisplayClass17_0.<<UseParseErrorReporting>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at System.CommandLine.Builder.CommandLineBuilderExtensions.<>c__DisplayClass12_0.<<UseHelp>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at System.CommandLine.Builder.CommandLineBuilderExtensions.<>c__DisplayClass22_0.<<UseVersionOption>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at System.CommandLine.Builder.CommandLineBuilderExtensions.<>c__DisplayClass19_0.<<UseTypoCorrections>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at System.CommandLine.Builder.CommandLineBuilderExtensions.<>c.<<RegisterWithDotnetSuggest>b__5_0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at System.CommandLine.Builder.CommandLineBuilderExtensions.<>c__DisplayClass8_0.<<UseExceptionHandler>b__0>d.MoveNext()
