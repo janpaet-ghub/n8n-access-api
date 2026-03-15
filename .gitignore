@@ -1,1 +1,91 @@
+############################
+# Dependencies
+############################
+node_modules/
+jspm_packages/
+
+############################
+# Logs
+############################
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+############################
+# Runtime data
+############################
+pids
+*.pid
+*.seed
+*.pid.lock
+
+############################
+# Environment variables
+############################
+.env
+.env.*
+!.env.example
+
+############################
+# Build output
+############################
+dist/
+build/
+tmp/
+temp/
+
+############################
+# n8n
+############################
+.n8n/
+n8n-data/
+
+############################
+# Databases
+############################
 backend_db/
+*.sqlite
+*.sqlite3
+*.db
+*.accdb
+*.laccdb
+
+############################
+# OS files
+############################
+.DS_Store
+Thumbs.db
+desktop.ini
+
+############################
+# VS Code
+############################
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+############################
+# Testing / coverage
+############################
+coverage/
+.nyc_output/
+
+############################
+# Temporary files
+############################
+*.tmp
+*.temp
+*.bak
+*.swp
+
+############################
+# Package managers
+############################
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
