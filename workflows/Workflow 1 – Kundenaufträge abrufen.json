@@ -1,0 +1,334 @@
+{
+  "name": "Workflow 1 – Kundenaufträge abrufen",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent/find-customer-orders",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        -160
+      ],
+      "id": "6ba9f76c-8adf-4be5-8d48-7c8794b7c390",
+      "name": "Webhook",
+      "webhookId": "0126f500-99ca-4e4d-8a00-7e891e4cdfdb",
+      "notesInFlow": false,
+      "notes": "Webhook empfängt Anfrage"
+    },
+    {
+      "parameters": {
+        "jsCode": "const kdNr = $json.body?.kdNr ?? $json.kdNr ?? $json.query?.kdNr;\n\nif (!kdNr || String(kdNr).trim() === \"\") {\n  return [\n    {\n      json: {\n        inputValid: false,\n        success: false,\n        request: {\n          kdNr: null\n        },\n        customer: {\n          kdNr: null,\n          displayName: null,\n          company: null\n        },\n        summary: {\n          orderCount: 0,\n          positionCount: 0\n        },\n        orders: [],\n        speech: {\n          summaryText: \"Es wurde keine Kundennummer übergeben.\"\n        },\n        error: {\n          code: \"MISSING_KDNR\",\n          message: \"kdNr fehlt im Request.\"\n        }\n      }\n    }\n  ];\n}\n\nconst kdNrClean = String(kdNr).trim();\n\nreturn [\n  {\n    json: {\n      inputValid: true,\n      kdNr: kdNrClean,\n      method: \"GET\",\n      path: `/customers/${kdNrClean}/orders`,\n      bodyString: \"\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        -160
+      ],
+      "id": "1065ab9e-724a-436e-aba2-d0e91731c083",
+      "name": "Prepare Input",
+      "notesInFlow": false,
+      "notes": "Kundennummer (kdNr) aus dem Request lesen"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.178.32:3000/sign",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "N8N_LINA_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "method",
+              "value": "={{$json.method}}"
+            },
+            {
+              "name": "path",
+              "value": "={{$json.path}}"
+            },
+            {
+              "name": "bodyString",
+              "value": "={{$json.bodyString}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -176,
+        -16
+      ],
+      "id": "fee1de33-16da-408e-8dcf-4818dca142b8",
+      "name": "Sign Request",
+      "notesInFlow": false,
+      "notes": "Holt die Signatur beim Windows-Service."
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        0,
+        -144
+      ],
+      "id": "35095910-fa1d-4a8b-a0fb-8baad324c4cb",
+      "name": "Combine Input + Sign",
+      "notesInFlow": false,
+      "notes": "Input 1: vom Code Node „Prepare Input“<br>\nInput 2: vom HTTP Request „Sign Request“"
+    },
+    {
+      "parameters": {
+        "url": "={{'http://192.168.178.32:3000' + $json.path}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$json.headers[\"X-API-Key\"]}}"
+            },
+            {
+              "name": "X-Timestamp",
+              "value": "={{$json.headers[\"X-Timestamp\"]}}"
+            },
+            {
+              "name": "X-Nonce",
+              "value": "={{$json.headers[\"X-Nonce\"]}}"
+            },
+            {
+              "name": "X-Signature",
+              "value": "={{$json.headers[\"X-Signature\"]}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "={{$json.headers[\"Content-Type\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        -144
+      ],
+      "id": "f97d15e0-17bb-416f-baa5-c8a725b2f7b6",
+      "name": "Get Orders",
+      "notes": "Echten GET-Request aufbauen."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        560,
+        208
+      ],
+      "id": "21d15bb8-a772-478a-96b5-c6047c00f018",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nfunction cleanValue(value) {\n  if (value === undefined || value === null) return null;\n  const text = String(value).trim();\n  return text === \"\" ? null : text;\n}\n\nfunction toNumberOrNull(value) {\n  if (value === undefined || value === null || value === \"\") return null;\n  const num = Number(value);\n  return Number.isNaN(num) ? null : num;\n}\n\nfunction buildResponse({\n  success,\n  requestKdNr,\n  customerKdNr = null,\n  displayName = null,\n  company = null,\n  orders = [],\n  error = null,\n  summaryText = null\n}) {\n  const orderCount = orders.length;\n  const positionCount = orders.reduce((sum, order) => sum + order.positions.length, 0);\n\n  return {\n    success,\n    request: {\n      kdNr: requestKdNr\n    },\n    customer: {\n      kdNr: customerKdNr ?? requestKdNr ?? null,\n      displayName: displayName ?? null,\n      company: company ?? null\n    },\n    summary: {\n      orderCount,\n      positionCount\n    },\n    orders,\n    speech: {\n      summaryText:\n        summaryText ??\n        (success\n          ? `Ich habe ${orderCount} Aufträge mit insgesamt ${positionCount} Positionen gefunden.`\n          : \"Die Anfrage konnte nicht erfolgreich verarbeitet werden.\")\n    },\n    error\n  };\n}\n\nconst success = input.ok === true;\nconst requestKdNr = cleanValue(input.kdNr);\nconst rows = Array.isArray(input.rows) ? input.rows : [];\n\n// Fall 1: API-Antwort nicht erfolgreich\nif (!success) {\n  return [\n    {\n      json: buildResponse({\n        success: false,\n        requestKdNr,\n        error: {\n          code: \"UPSTREAM_REQUEST_FAILED\",\n          message: \"Die API hat keinen erfolgreichen Status zurückgegeben.\"\n        },\n        summaryText: \"Die Anfrage konnte nicht erfolgreich verarbeitet werden.\"\n      })\n    }\n  ];\n}\n\n// Fall 2: Erfolgreich, aber keine Treffer\nif (rows.length === 0) {\n  return [\n    {\n      json: buildResponse({\n        success: true,\n        requestKdNr,\n        summaryText: requestKdNr\n          ? `Ich habe leider keine Aufträge für die Kundennummer ${requestKdNr} gefunden.`\n          : \"Ich habe leider keine Aufträge gefunden.\"\n      })\n    }\n  ];\n}\n\n// Kundendaten aus erster Zeile\nconst firstRow = rows[0];\n\nconst customerKdNr =\n  cleanValue(firstRow.KdNr) ??\n  cleanValue(firstRow.kdNr) ??\n  requestKdNr;\n\nconst displayName =\n  cleanValue(firstRow.displayName) ??\n  cleanValue(firstRow.DisplayName);\n\nconst company =\n  cleanValue(firstRow.Firma) ??\n  cleanValue(firstRow.firma) ??\n  cleanValue(firstRow.Company);\n\n// Nach AuftragsID gruppieren\nconst ordersMap = new Map();\n\nfor (const row of rows) {\n  const orderId =\n    toNumberOrNull(row.AuftragsID) ??\n    toNumberOrNull(row.auftragsID) ??\n    toNumberOrNull(row.orderId);\n\n  // Zeilen ohne gültige AuftragsID überspringen\n  if (orderId === null) {\n    continue;\n  }\n\n  if (!ordersMap.has(orderId)) {\n    const invoiceNumber =\n      cleanValue(row.Rechnungsnummer) ??\n      cleanValue(row.rechnungsnummer) ??\n      cleanValue(row.invoiceNumber);\n\n    const comment =\n      cleanValue(row.voice_agent_comment) ??\n      cleanValue(row.comment);\n\n    ordersMap.set(orderId, {\n      orderId,\n      invoiceNumber,\n      comment,\n      positions: []\n    });\n  }\n\n  const position =\n    toNumberOrNull(row.AuftragsPos) ??\n    toNumberOrNull(row.auftragsPos) ??\n    toNumberOrNull(row.position);\n\n  const model =\n    cleanValue(row.Modellbezeichnung) ??\n    cleanValue(row.modellbezeichnung) ??\n    cleanValue(row.model);\n\n  const cartridge =\n    cleanValue(row.Cartridge) ??\n    cleanValue(row.cartridge);\n\n  const quantity =\n    toNumberOrNull(row.Einheit) ??\n    toNumberOrNull(row.einheit) ??\n    toNumberOrNull(row.quantity);\n\n  ordersMap.get(orderId).positions.push({\n    position,\n    model,\n    cartridge,\n    quantity\n  });\n}\n\nlet orders = Array.from(ordersMap.values());\n\n// Falls alle Zeilen wegen fehlender AuftragsID herausgefiltert wurden\nif (orders.length === 0) {\n  return [\n    {\n      json: buildResponse({\n        success: false,\n        requestKdNr,\n        customerKdNr,\n        displayName,\n        company,\n        error: {\n          code: \"INVALID_ORDER_DATA\",\n          message: \"Die API hat keine verwertbaren Auftragsdaten geliefert.\"\n        },\n        summaryText: \"Es wurden keine verwertbaren Auftragsdaten geliefert.\"\n      })\n    }\n  ];\n}\n\n// Positionen ohne Inhalt optional herausfiltern\norders = orders.map(order => {\n  const filteredPositions = order.positions.filter(pos => {\n    return (\n      pos.position !== null ||\n      pos.model !== null ||\n      pos.cartridge !== null ||\n      pos.quantity !== null\n    );\n  });\n\n  return {\n    ...order,\n    positions: filteredPositions\n  };\n});\n\n// Sortieren\norders.sort((a, b) => a.orderId - b.orderId);\n\nfor (const order of orders) {\n  order.positions.sort((a, b) => {\n    const aPos = a.position ?? 0;\n    const bPos = b.position ?? 0;\n    return aPos - bPos;\n  });\n}\n\nconst orderCount = orders.length;\nconst positionCount = orders.reduce((sum, order) => sum + order.positions.length, 0);\n\n// Natürlichere Sprachzusammenfassung\nlet summaryText;\n\nif (orderCount === 0) {\n  summaryText = requestKdNr\n    ? `Ich habe leider keine Aufträge für die Kundennummer ${requestKdNr} gefunden.`\n    : \"Ich habe leider keine Aufträge gefunden.\";\n} else {\n  let subject = null;\n\n  if (company) {\n    subject = `die Firma ${company}`;\n  } else if (displayName) {\n    subject = `den Käufer ${displayName}`;\n  } else if (customerKdNr) {\n    subject = `die Kundennummer ${customerKdNr}`;\n  }\n\n  const auftragText = orderCount === 1 ? \"1 Auftrag\" : `${orderCount} Aufträge`;\n  const positionsText = positionCount === 1 ? \"1 Position\" : `${positionCount} Positionen`;\n\n  summaryText = subject\n    ? `Ich habe ${auftragText} mit insgesamt ${positionsText} für ${subject} gefunden.`\n    : `Ich habe ${auftragText} mit insgesamt ${positionsText} gefunden.`;\n}\n\nreturn [\n  {\n    json: buildResponse({\n      success: true,\n      requestKdNr,\n      customerKdNr,\n      displayName,\n      company,\n      orders,\n      summaryText\n    })\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -144
+      ],
+      "id": "e47e8be2-860a-4e10-a9c4-56ee35496ccc",
+      "name": "Build Agent Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0c7da8ae-7a45-40bd-83e4-d503e1f3f498",
+              "leftValue": "={{$json.inputValid}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -368,
+        96
+      ],
+      "id": "f67696aa-dcc1-412f-bf0e-6b82b2542256",
+      "name": "Input valid?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = { ...$json };\ndelete data.inputValid;\n\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        208
+      ],
+      "id": "0df2d4d8-5d7d-4f2c-93d3-817740475002",
+      "name": "remove input valid",
+      "notes": "Entfernt inputValid aus der finalen Antwort."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Input": {
+      "main": [
+        [
+          {
+            "node": "Combine Input + Sign",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Input valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign Request": {
+      "main": [
+        [
+          {
+            "node": "Combine Input + Sign",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Combine Input + Sign": {
+      "main": [
+        [
+          {
+            "node": "Get Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Orders": {
+      "main": [
+        [
+          {
+            "node": "Build Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input valid?": {
+      "main": [
+        [
+          {
+            "node": "Sign Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "remove input valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "remove input valid": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3b7af3b7-5f66-48f9-a773-97a2a16e12c7",
+  "meta": {
+    "instanceId": "0ec6dfdcab7eb78bd76c6abaa334f7b038d8c288297aa2bbcf7e11dc5886933c"
+  },
+  "id": "4ZfkgKsqlKQiyys1",
+  "tags": []
+}

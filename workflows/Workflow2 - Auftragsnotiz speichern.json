@@ -1,0 +1,456 @@
+{
+  "name": "Workflow2 - Auftragsnotiz speichern",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const data = $json.body ?? $json;\n\nconst kdNr = String(data.kdNr ?? '').trim();\nconst auftragsIdRaw = data.auftragsId;\nconst comment = String(data.comment ?? '').trim();\n\nconst auftragsId = Number(auftragsIdRaw);\n\nconst patchBodyObject = {\n  comment\n};\n\nconst patchBodyString = JSON.stringify(patchBodyObject);\nconst signPath = `/customers/${kdNr}/${auftragsId}/comment`;\n\nconst inputValid =\n  kdNr.length > 0 &&\n  Number.isInteger(auftragsId) &&\n  auftragsId > 0 &&\n  comment.length > 0;\n\nlet validationError = null;\nlet speechText = null;\n\nif (!kdNr) {\n  validationError = 'KDNR_MISSING';\n  speechText = 'Die Kundennummer fehlt.';\n} else if (!Number.isInteger(auftragsId) || auftragsId <= 0) {\n  validationError = 'AUFTRAGSID_INVALID';\n  speechText = 'Die Auftrags-ID ist ungültig.';\n} else if (!comment) {\n  validationError = 'COMMENT_MISSING';\n  speechText = 'Der Kommentartext fehlt.';\n}\n\nreturn [\n  {\n    json: {\n      kdNr,\n      auftragsId,\n      comment,\n      signPath,\n      patchBodyObject,\n      patchBodyString,\n      inputValid,\n      validationError,\n      speechText\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        -384
+      ],
+      "id": "c83c0460-5486-4887-8b90-4f3932c29fe2",
+      "name": "Prepare Input",
+      "notes": "Node normalisiert die Eingaben und erzeugt alle technischen Felder, die später gebraucht werden:\n- kdNr\n- auftragsId\n- comment\n- signPath\n- patchBodyObject\n- patchBodyString\n- inputValid\n- validationError\nDer PATCH-Body wird genau einmal serialisiert und geht später an /sign in den PATCH-Request."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "159996b0-0580-4f8e-aad7-e7109aac3b88",
+              "leftValue": "={{ $json.inputValid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -496,
+        -192
+      ],
+      "id": "30c77303-76cf-4a12-a678-b1087a571b9e",
+      "name": "Input valid?",
+      "notes": "Verzweigung zwischen gültigen und ungültigen Eingaben"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      success: false,\n      request: {\n        kdNr: $json.kdNr || null,\n        auftragsId: Number.isInteger($json.auftragsId) ? $json.auftragsId : $json.auftragsId ?? null\n      },\n      result: null,\n      speech: {\n        summaryText: $json.speechText || 'Die Anfrage ist ungültig.'\n      },\n      error: {\n        code: $json.validationError || 'VALIDATION_ERROR'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        32
+      ],
+      "id": "89fe7db1-9298-43df-8bb3-b28acd1b6f66",
+      "name": "Build Validation Error Response",
+      "notes": "Bei ungültigen Eingaben wird direkt eine agentenfreundliche Antwort erzeugt.\nTypische Fehlercodes:\n- KDNR_MISSING\n- AUFTRAGSID_INVALID\n- COMMENT_MISSING"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.178.32:3000/sign",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "N8N_LINA_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "method",
+              "value": "PATCH"
+            },
+            {
+              "name": "path",
+              "value": "={{ $json.signPath }}"
+            },
+            {
+              "name": "bodyString",
+              "value": "={{ $json.patchBodyString }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -272,
+        -208
+      ],
+      "id": "e9d2daab-c7ef-42b7-9793-c9940057610c",
+      "name": "Sign Request",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "notes": "Node ruft den Sign-Service auf. \n\nDa Fehler nicht global über n8n Error Handling gelöst werden sollen: Continue On Fail = true.\nSomit läuft der Workflow auch bei Sign-Fehlern noch in eine saubere Agent-Antwort.\n\nErwartete Antwort:\n{\n  \"ok\": true,\n  \"headers\": {\n    \"X-API-Key\": \"...\",\n    \"X-Timestamp\": \"...\",\n    \"X-Nonce\": \"...\",\n    \"X-Signature\": \"...\",\n    \"Content-Type\": \"application/json\"\n  }\n}"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -64,
+        -368
+      ],
+      "id": "a9e10599-f082-4ab2-8cf0-dfacc8aeddd5",
+      "name": "Merge Input + Sign",
+      "notes": "Benötigt wird folgende gemeinsame Datenstruktur:\n- die ursprünglichen Eingabedaten\n- signPath\n- patchBodyString\n- die Antwort des Sign-Service"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "490c7023-5fbe-4f39-b4eb-d085ceb196f2",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        -192
+      ],
+      "id": "c50c8af2-9615-471f-93dc-1fd02ea57a7b",
+      "name": "Sign OK?",
+      "notes": "Prüfen, ob der Sign-Service erfolgreich war."
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      success: false,\n      request: {\n        kdNr: $json.kdNr,\n        auftragsId: $json.auftragsId\n      },\n      result: null,\n      speech: {\n        summaryText: 'Die Anfrage konnte nicht signiert werden.'\n      },\n      error: {\n        code: 'SIGN_REQUEST_FAILED'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -96
+      ],
+      "id": "f61cde07-446e-4011-8bdf-daa1e553d311",
+      "name": "Build Sign Error Response",
+      "notes": "Saubere Antwort erzeugen, falls der Sign-Service fehlschlägt."
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'http://192.168.178.32:3000' + $json.signPath }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $json.headers['X-API-Key'] }}"
+            },
+            {
+              "name": "X-Timestamp",
+              "value": "={{ $json.headers['X-Timestamp'] }}"
+            },
+            {
+              "name": "X-Nonce",
+              "value": "={{ $json.headers['X-Nonce'] }}"
+            },
+            {
+              "name": "X-Signature",
+              "value": "={{ $json.headers['X-Signature'] }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.patchBodyString }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        -288
+      ],
+      "id": "3721fed0-1ed1-4851-93ec-278b7fd56f04",
+      "name": "PATCH Request (Add Comment)",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "notes": "Der Node sendet den exakt signierten Body an die Access-API.\nTechnisch kritischer Teil, weil der PATCH-Body exakt dem signierten bodyString entsprechen muss."
+    },
+    {
+      "parameters": {
+        "jsCode": "//const found = $json.found === true;\nconst updated = $json.updated === true;\n\nconst kdNr = $json.kdNr;\nconst auftragsId = $json.auftragsId;\n\nif (updated) {\n//if (found && updated) {\n  return [\n    {\n      json: {\n        success: true,\n        request: {\n          kdNr,\n          auftragsId\n        },\n        result: {\n          updated: true\n        },\n        speech: {\n          summaryText: 'Die Auftragsnotiz wurde erfolgreich gespeichert.'\n        },\n        error: null\n      }\n    }\n  ];\n}\n/*\nif (!found) {\n  return [\n    {\n      json: {\n        success: false,\n        request: {\n          kdNr,\n          auftragsId\n        },\n        result: null,\n        speech: {\n          summaryText: 'Der Auftrag konnte nicht gefunden werden.'\n        },\n        error: {\n          code: 'ORDER_NOT_FOUND'\n        }\n      }\n    }\n  ];\n}\n*/\nreturn [\n  {\n    json: {\n      success: false,\n      request: {\n        kdNr,\n        auftragsId\n      },\n      result: {\n        updated: false\n      },\n      speech: {\n        summaryText: 'Die Auftragsnotiz konnte nicht gespeichert werden.'\n      },\n      error: {\n        code: 'ORDER_NOTE_UPDATE_FAILED'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -352
+      ],
+      "id": "f7f7ddb9-1d65-4b72-adf8-28dbd3058d6f",
+      "name": "Build Agent Response",
+      "notes": "Auswertung der PATCH-Antwort und Aufbau der finalen, agentenfreundlichen Webhook-Antwort."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1056,
+        32
+      ],
+      "id": "473b5001-23df-4e61-8e37-f8c3db42230b",
+      "name": "Respond to Webhook",
+      "notes": "Gibt die finale JSON-Antwort an den aufrufenden Agenten zurück.\nResponse-Code 200, da viele Agent-/Voice-Systeme mit einer stabilen JSON-Struktur plus success: false oft besser umgehen als mit wechselnden HTTP-Statuscodes."
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        576,
+        -352
+      ],
+      "id": "eb0b3815-df7d-4e75-a0f4-2640c271abb8",
+      "name": "Merge Input + PATCH Result",
+      "notes": "Der Node ist nötig, damit Build Agent Response sowohl die PATCH-Antwort als auch die ursprünglichen Request-Daten kennt."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent/add-order-note",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -928,
+        -384
+      ],
+      "id": "ef229ef5-8047-4e3d-a2c6-4ebf4e278d14",
+      "name": "Webhook – Add Order Node",
+      "webhookId": "25f2ce9d-897f-473d-aa79-585628209898",
+      "notes": "Einstiegspunkt für den Voice-Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Input": {
+      "main": [
+        [
+          {
+            "node": "Input valid?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Input + Sign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input valid?": {
+      "main": [
+        [
+          {
+            "node": "Sign Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Validation Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign Request": {
+      "main": [
+        [
+          {
+            "node": "Merge Input + Sign",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Build Validation Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Input + Sign": {
+      "main": [
+        [
+          {
+            "node": "Sign OK?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Input + PATCH Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign OK?": {
+      "main": [
+        [
+          {
+            "node": "PATCH Request (Add Comment)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Sign Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PATCH Request (Add Comment)": {
+      "main": [
+        [
+          {
+            "node": "Merge Input + PATCH Result",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Build Sign Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Input + PATCH Result": {
+      "main": [
+        [
+          {
+            "node": "Build Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook – Add Order Node": {
+      "main": [
+        [
+          {
+            "node": "Prepare Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2c24c697-5256-47e9-bfaa-8a2739ff4e75",
+  "meta": {
+    "instanceId": "0ec6dfdcab7eb78bd76c6abaa334f7b038d8c288297aa2bbcf7e11dc5886933c"
+  },
+  "id": "UR4yTH9ZWBGAWUwz",
+  "tags": []
+}
