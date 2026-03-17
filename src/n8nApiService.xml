@@ -11,10 +11,13 @@
   <arguments>server.js</arguments>
 
   <!-- Working directory jpa-->
-  <workingdirectory>D:\Farbspektrum\n8n\api\access\src</workingdirectory>
+  <workingdirectory>D:\Farbspektrum\n8n\api\n8n-access-api\src</workingdirectory>
   
   <!-- Restart in case of error -->
   <restart delay="10 sec" />
+
+  <!-- Log path -->
+  <logpath>D:\Farbspektrum\n8n\api\n8n-access-api\src\logs</logpath>
 
   <!-- Logging -->
   <log mode="roll">
@@ -27,7 +30,7 @@
   <env name="LINA_HMAC_SECRET" value="N8N_LINA_HMAC_SECRET" />
   <env name="LINA_API_BASE_URL" value="192.168.178.32" />
   <env name="SIGNER_ALLOW_REMOTE" value="true" />
-  <env name="ACCESS_DB_PATH" value="D:\Farbspektrum\n8n\api\access\backend_db\backend.accdb" />
+  <env name="ACCESS_DB_PATH" value="D:\Farbspektrum\n8n\api\n8n-access-api\backend_db\backend.accdb" />
 
   <env name="PORT" value="3000" />
   <env name="SIGNATURE_MAX_SKEW_SEC" value="300" />
