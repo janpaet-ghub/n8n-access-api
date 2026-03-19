@@ -126,11 +126,21 @@ WHERE [KdNr] = '${kdNrEsc}'
   AND [AuftragsID] = ${auftragsIdNum};
 `.trim();
 
-  let currentSql = existsSql;
+  const verifySql = `
+SELECT [voice_agent_comment]
+FROM tblAuftrag
+WHERE [KdNr] = '${kdNrEsc}'
+  AND [AuftragsID] = ${auftragsIdNum};
+`.trim();
+
+  let currentSql = updateSql;
 
   try {
-    const rows = await connection.query(existsSql);
-    const orderFound = Boolean(rows?.[0].order_found);
+    await connection.execute(updateSql);
+
+    currentSql = verifySql;
+    const rows = await connection.query(verifySql);
+    const orderFound = Array.isArray(rows) && rows.length > 0;
 
     if (!orderFound) {
       return {
@@ -139,12 +149,11 @@ WHERE [KdNr] = '${kdNrEsc}'
       };
     }
 
-    currentSql = updateSql;
-    await connection.execute(updateSql);
+    const storedComment = String(rows[0]?.voice_agent_comment ?? "");
 
     return {
       found: true,
-      updated: true,
+      updated: storedComment === comment,
     };
   } catch (err) {
     logDbError(err, { sql: currentSql, action: "updateOrderComment", log });
