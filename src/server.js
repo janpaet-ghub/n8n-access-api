@@ -47,7 +47,6 @@ app.use((req, res, next) => {
 const API_KEY = process.env.LINA_API_KEY;
 const HMAC_SECRET = process.env.LINA_HMAC_SECRET;
 const SIGNATURE_MAX_SKEW_SEC = parseInt(process.env.SIGNATURE_MAX_SKEW_SEC || "300", 10);
-const SKEW_SECONDS = Number(process.env.SKEW_SECONDS ?? 300);
 const SIGNER_ALLOW_REMOTE = String(process.env.SIGNER_ALLOW_REMOTE || "false").toLowerCase() === "true";
 
 const SIGN_RATE_LIMIT_MAX = Number(process.env.SIGN_RATE_LIMIT_MAX ?? 30);
@@ -231,7 +230,7 @@ app.post("/sign", (req, res) => {
     },
     canonical,
     bodyHashHex,
-    expiresIn: SKEW_SECONDS,
+    expiresIn: SIGNATURE_MAX_SKEW_SEC,
   });
 });
 
